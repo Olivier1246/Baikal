@@ -1,0 +1,323 @@
+################################################################################
+#          GUIDE CONFIGURATION THUNDERBIRD AVEC BAÏKAL                         #
+################################################################################
+
+PROBLÈME RENCONTRÉ
+==================
+
+Erreur dans Thunderbird lors de l'enregistrement d'un événement:
+  "une erreur s'est produite lors de l'écriture dans l'agenda dav"
+  Code d'erreur : MODIFICATION_FAILED
+
+CAUSES POSSIBLES
+================
+
+1. URL CalDAV incorrecte ou incomplète
+2. Calendrier configuré en lecture seule
+3. Problèmes de permissions côté serveur
+4. Cache Thunderbird corrompu
+5. Problème d'authentification
+
+SOLUTION 1: DIAGNOSTIC SERVEUR (PRIORITÉ)
+==========================================
+
+Avant de toucher à Thunderbird, vérifier que le serveur est OK:
+
+cd ~/baikal-install
+chmod +x diagnose_caldav_write.sh
+sudo ./diagnose_caldav_write.sh
+
+Ce script vérifie:
+  ✓ Permissions des fichiers
+  ✓ Accès en écriture à la base
+  ✓ Présence des calendriers
+  ✓ Configuration PHP
+  ✓ Logs d'erreur
+
+SI PROBLÈMES DÉTECTÉS:
+  sudo ./fix_caldav_permissions.sh
+
+SOLUTION 2: VÉRIFIER L'URL CALDAV
+==================================
+
+L'URL doit être COMPLÈTE et EXACTE.
+
+FORMAT CORRECT:
+  https://caldav.maison-oadf.ddns.net/dav.php/calendars/[utilisateur]/[calendrier]/
+
+EXEMPLES:
+  ✓ https://caldav.maison-oadf.ddns.net/dav.php/calendars/admin/default/
+  ✓ https://caldav.maison-oadf.ddns.net/dav.php/calendars/john/travail/
+  ✗ https://caldav.maison-oadf.ddns.net/  (incomplet)
+  ✗ https://caldav.maison-oadf.ddns.net/dav.php  (incomplet)
+
+COMMENT TROUVER L'URL EXACTE:
+-----------------------------
+
+1. Se connecter à l'interface admin Baïkal:
+   https://caldav.maison-oadf.ddns.net/admin/
+
+2. Aller dans "Utilisateurs & Ressources"
+
+3. Cliquer sur votre utilisateur
+
+4. Sous "Calendriers", vous verrez l'URL exacte de chaque calendrier
+   Exemple: calendars/admin/default/
+
+5. Composer l'URL complète:
+   https://caldav.maison-oadf.ddns.net/dav.php/calendars/admin/default/
+
+ATTENTION: Le "/" final est IMPORTANT !
+
+SOLUTION 3: RECONFIGURER LE CALENDRIER DANS THUNDERBIRD
+========================================================
+
+Si l'URL est correcte mais le problème persiste, recréer le calendrier.
+
+ÉTAPES DÉTAILLÉES:
+
+1. SUPPRIMER L'ANCIEN CALENDRIER
+   -------------------------------
+   Dans Thunderbird:
+   - Aller dans l'onglet "Agenda"
+   - Clic droit sur le calendrier problématique
+   - Sélectionner "Supprimer le calendrier"
+   - Confirmer
+
+2. AJOUTER UN NOUVEAU CALENDRIER
+   ------------------------------
+   - Clic droit dans la liste des calendriers (à gauche)
+   - "Nouveau calendrier..."
+   - Sélectionner "Sur le réseau"
+   - Clic sur "Suivant"
+
+3. CHOISIR LE TYPE
+   ---------------
+   - Sélectionner "CalDAV"
+   - Ne PAS cocher "Détecter automatiquement"
+
+4. ENTRER LES INFORMATIONS
+   ------------------------
+   Utilisateur: [votre_utilisateur_baikal]
+   
+   Emplacement: https://caldav.maison-oadf.ddns.net/dav.php/calendars/[utilisateur]/[calendrier]/
+   
+   ⚠️ IMPORTANT: Remplacez [utilisateur] et [calendrier] par les valeurs réelles !
+   
+   Exemple:
+   Utilisateur: admin
+   Emplacement: https://caldav.maison-oadf.ddns.net/dav.php/calendars/admin/default/
+
+5. AUTHENTIFICATION
+   ----------------
+   - Thunderbird demandera le mot de passe
+   - Entrer le mot de passe Baïkal
+   - ☑ Cocher "Utiliser le gestionnaire de mots de passe"
+
+6. PROPRIÉTÉS DU CALENDRIER
+   -------------------------
+   Une fois créé:
+   - Clic droit sur le calendrier
+   - "Propriétés"
+   - Vérifier:
+     ☑ "Activer ce calendrier"
+     ☑ "En lecture et en écriture" (PAS lecture seule !)
+     ☑ "Afficher les alarmes"
+   - Clic sur "OK"
+
+7. TESTER
+   ------
+   - Créer un nouvel événement
+   - L'enregistrer
+   - Vérifier qu'il n'y a plus d'erreur
+   - L'événement devrait apparaître dans Baïkal web
+
+SOLUTION 4: VIDER LE CACHE THUNDERBIRD
+=======================================
+
+Si le problème persiste après reconfiguration:
+
+WINDOWS:
+--------
+1. Fermer complètement Thunderbird
+2. Appuyer sur Win+R
+3. Taper: %APPDATA%\Thunderbird\Profiles\
+4. Ouvrir le dossier de votre profil (ex: xxxxxxxx.default)
+5. Supprimer les fichiers:
+   - calendar-data/
+   - storage.sdb
+6. Relancer Thunderbird
+
+LINUX:
+------
+1. Fermer complètement Thunderbird
+2. Ouvrir un terminal
+3. cd ~/.thunderbird/
+4. ls  # Trouver votre profil
+5. cd xxxxxxxx.default/
+6. rm -rf calendar-data/
+7. rm -f storage.sdb
+8. Relancer Thunderbird
+
+MAC:
+----
+1. Fermer complètement Thunderbird
+2. Ouvrir Finder
+3. Aller à ~/Library/Thunderbird/Profiles/
+4. Ouvrir votre profil
+5. Supprimer calendar-data/
+6. Relancer Thunderbird
+
+SOLUTION 5: TESTER AVEC CURL
+=============================
+
+Pour vérifier que le serveur accepte les modifications:
+
+# Test de lecture (PROPFIND)
+curl -u 'utilisateur:motdepasse' -X PROPFIND \
+  -H 'Depth: 1' \
+  https://caldav.maison-oadf.ddns.net/dav.php/calendars/utilisateur/default/
+
+# Test d'écriture (PUT - créer un événement)
+curl -u 'utilisateur:motdepasse' -X PUT \
+  -H 'Content-Type: text/calendar; charset=utf-8' \
+  -d 'BEGIN:VCALENDAR
+VERSION:2.0
+BEGIN:VEVENT
+UID:test-event-12345@caldav.maison-oadf.ddns.net
+DTSTAMP:20251224T120000Z
+DTSTART:20251225T100000Z
+DTEND:20251225T110000Z
+SUMMARY:Test événement
+END:VEVENT
+END:VCALENDAR' \
+  https://caldav.maison-oadf.ddns.net/dav.php/calendars/utilisateur/default/test-event-12345.ics
+
+Remplacez 'utilisateur' et 'motdepasse' par vos identifiants.
+
+RÉSULTATS ATTENDUS:
+  - 200 ou 201 = Succès
+  - 401 = Erreur d'authentification
+  - 403 = Permissions insuffisantes
+  - 500 = Erreur serveur
+
+SOLUTION 6: VÉRIFIER LES LOGS SERVEUR
+======================================
+
+Pendant que vous essayez de créer un événement dans Thunderbird,
+surveillez les logs en temps réel:
+
+sudo tail -f /var/log/nginx/baikal_error.log
+
+Vous verrez immédiatement les erreurs qui se produisent.
+
+ERREURS COURANTES:
+
+"Permission denied" → Problème de permissions
+  Solution: sudo ./fix_caldav_permissions.sh
+
+"404 Not Found" → URL incorrecte
+  Solution: Vérifier l'URL du calendrier
+
+"401 Unauthorized" → Problème d'authentification
+  Solution: Vérifier identifiant/mot de passe
+
+"500 Internal Server Error" → Problème PHP/Base
+  Solution: Consulter les logs PHP
+
+SOLUTION 7: PERMISSIONS LECTURE SEULE
+======================================
+
+Si le calendrier est marqué comme "Lecture seule" dans Thunderbird:
+
+1. Clic droit sur le calendrier dans Thunderbird
+2. "Propriétés"
+3. Vérifier que "En lecture et en écriture" est sélectionné
+4. Si "Lecture seule" est grisé, le calendrier est configuré côté serveur
+5. Aller dans Baïkal admin et vérifier les droits de l'utilisateur
+
+CONFIGURATION AVANCÉE THUNDERBIRD
+==================================
+
+Pour améliorer la synchronisation:
+
+1. Ouvrir les Préférences Thunderbird
+2. Aller dans "Agenda" ou "Calendar"
+3. Paramètres de synchronisation:
+   - Intervalle de synchronisation: 5-10 minutes
+   - Activer les notifications d'événements
+
+THUNDERBIRD + THUNDERBIRD POUR ANDROID
+=======================================
+
+Si vous utilisez aussi Thunderbird sur Android:
+
+1. Installer "Thunderbird" depuis Google Play
+2. Ajouter le calendrier:
+   - Menu > Paramètres > Calendriers
+   - Ajouter un calendrier
+   - CalDAV
+   - Même URL que sur desktop
+3. Entrer les identifiants
+
+ALTERNATIVE: DAVX5 (PLUS STABLE SUR ANDROID)
+---------------------------------------------
+
+DAVx5 est souvent plus stable que Thunderbird Android:
+
+1. Installer DAVx5 depuis F-Droid ou Google Play
+2. Ajouter un compte:
+   - URL de base: https://caldav.maison-oadf.ddns.net/dav.php
+   - Utilisateur et mot de passe
+3. Synchroniser calendriers et contacts
+4. Utiliser l'app Calendrier système Android
+
+CHECKLIST DE DÉPANNAGE
+=======================
+
+☐ Serveur diagnostiqué (./diagnose_caldav_write.sh)
+☐ Permissions corrigées si nécessaire (./fix_caldav_permissions.sh)
+☐ URL CalDAV complète et correcte (avec / final)
+☐ Calendrier configuré "Lecture et écriture" (pas lecture seule)
+☐ Cache Thunderbird vidé
+☐ Test curl réussi
+☐ Logs serveur sans erreurs
+☐ Authentification valide
+☐ Calendrier recréé dans Thunderbird
+
+RESSOURCES SUPPLÉMENTAIRES
+===========================
+
+Documentation Baïkal:
+  https://sabre.io/baikal/
+
+Documentation Thunderbird CalDAV:
+  https://support.mozilla.org/kb/using-lightning-calendar
+
+Tests CalDAV en ligne:
+  https://www.caldavtester.org/
+
+Si après TOUTES ces étapes le problème persiste:
+  - Consulter les forums Baïkal
+  - Vérifier les issues GitHub: https://github.com/sabre-io/Baikal/issues
+  - Fournir les logs complets
+
+================================================================================
+
+COMMANDE RAPIDE POUR TOUT CORRIGER
+===================================
+
+# 1. Diagnostic
+sudo ./diagnose_caldav_write.sh
+
+# 2. Correction permissions (si nécessaire)
+sudo ./fix_caldav_permissions.sh
+
+# 3. Obtenir l'URL exacte du calendrier
+Se connecter à: https://caldav.maison-oadf.ddns.net/admin/
+
+# 4. Reconfigurer dans Thunderbird avec l'URL complète
+
+================================================================================
+
+Bonne synchronisation ! 📅
