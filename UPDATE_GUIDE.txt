@@ -1,0 +1,402 @@
+################################################################################
+#                      GUIDE DE MISE À JOUR BAÏKAL                             #
+################################################################################
+
+Ce guide explique comment mettre à jour Baïkal vers une nouvelle version en
+utilisant le script automatisé ou manuellement.
+
+================================================================================
+MÉTHODE 1: MISE À JOUR AUTOMATIQUE (RECOMMANDÉE)
+================================================================================
+
+Le script update_baikal.sh automatise entièrement le processus de mise à jour.
+
+FONCTIONNALITÉS:
+---------------
+✓ Récupère automatiquement toutes les versions depuis GitHub
+✓ Affiche les versions stables et pré-releases
+✓ Crée un backup automatique avant mise à jour
+✓ Préserve vos données (calendriers, contacts, configuration)
+✓ Vérifie l'installation après mise à jour
+✓ Permet un rollback en cas de problème
+
+UTILISATION:
+-----------
+cd ~/baikal-install
+chmod +x update_baikal.sh
+sudo ./update_baikal.sh
+
+ÉTAPES DU SCRIPT:
+----------------
+1. Vérification de l'installation actuelle
+2. Affichage de la version actuelle
+3. Récupération des versions disponibles depuis GitHub
+4. Affichage de toutes les releases (stables et pré-releases)
+5. Sélection de la version à installer
+6. Confirmation
+7. Création d'un backup complet
+8. Téléchargement de la nouvelle version
+9. Arrêt des services (Nginx, PHP-FPM)
+10. Installation de la nouvelle version
+11. Préservation des données (Specific/ et config/)
+12. Restauration des permissions
+13. Redémarrage des services
+14. Vérification de l'installation
+15. Rapport final
+
+EXEMPLE D'UTILISATION:
+---------------------
+$ sudo ./update_baikal.sh
+
+╔══════════════════════════════════════════════════════════╗
+║         MISE À JOUR DE BAÏKAL                            ║
+║         Version automatique depuis GitHub                ║
+╚══════════════════════════════════════════════════════════╝
+
+Version actuelle de Baïkal: 0.9.4
+
+[INFO] Récupération des versions disponibles depuis GitHub...
+[INFO] Releases récupérées avec succès
+
+═══════════════════════════════════════════════════════════
+Versions disponibles
+═══════════════════════════════════════════════════════════
+
+Version actuelle : 0.9.4
+
+ 1. 0.9.5         [STABLE]
+    Nom: 0.9.5
+    Date: 15/10/2024
+
+ 2. 0.9.4         [STABLE] [ACTUELLE]
+    Nom: 0.9.4
+    Date: 01/08/2024
+
+ 3. 0.9.3         [STABLE]
+    Nom: 0.9.3
+    Date: 15/05/2024
+
+Choisissez une version à installer (1-3) ou 'q' pour quitter: 1
+
+Version sélectionnée:
+  Version: 0.9.5
+  Nom: 0.9.5
+  Date: 15/10/2024
+
+⚠ ATTENTION ⚠
+Cette opération va:
+  1. Créer un backup complet
+  2. Arrêter Nginx et PHP-FPM
+  3. Installer Baïkal 0.9.5
+  4. Redémarrer les services
+
+Voulez-vous continuer? (o/n): o
+
+[ÉTAPE] Création d'un backup de sécurité...
+[INFO] Sauvegarde de l'installation actuelle...
+[INFO] Backup créé: /var/backups/baikal/upgrade/baikal_pre_upgrade_20241224_120000.tar.gz (5.2M)
+
+[ÉTAPE] Téléchargement de Baïkal 0.9.5...
+[INFO] Téléchargement terminé
+
+[ÉTAPE] Installation de la nouvelle version...
+[INFO] Arrêt des services...
+[INFO] Installation de la nouvelle version...
+[INFO] Restauration des données utilisateur...
+[INFO] Configuration des permissions...
+[INFO] Redémarrage des services...
+
+[ÉTAPE] Vérification de l'installation...
+[INFO] Serveur web répond correctement (HTTP 200)
+[INFO] Nouvelle version installée: 0.9.5
+
+═══════════════════════════════════════════════════════════
+MISE À JOUR TERMINÉE
+═══════════════════════════════════════════════════════════
+
+Version précédente: 0.9.4
+Nouvelle version: 0.9.5
+
+Backup disponible dans:
+  /var/backups/baikal/upgrade/baikal_pre_upgrade_20241224_120000.tar.gz
+
+================================================================================
+VÉRIFICATION RAPIDE DES MISES À JOUR
+================================================================================
+
+Pour vérifier rapidement si une mise à jour est disponible sans installer:
+
+cd ~/baikal-install
+chmod +x check_updates.sh
+sudo ./check_updates.sh
+
+Affiche:
+- Version actuelle
+- Dernière version stable disponible
+- Si une mise à jour est nécessaire
+
+================================================================================
+MÉTHODE 2: MISE À JOUR MANUELLE
+================================================================================
+
+Si vous préférez une mise à jour manuelle, voici les étapes détaillées.
+
+PRÉREQUIS:
+---------
+✓ Accès root au serveur
+✓ Backup récent des données
+✓ Nouvelle version téléchargée
+
+ÉTAPES DÉTAILLÉES:
+-----------------
+
+1. CRÉER UN BACKUP COMPLET
+   -------------------------
+   cd /var/backups/baikal
+   sudo tar -czf baikal_backup_$(date +%Y%m%d).tar.gz /var/www/baikal
+   
+   # Backup de la config Nginx
+   sudo cp /etc/nginx/sites-available/baikal baikal_nginx_$(date +%Y%m%d).conf
+   
+   # Vérifier le backup
+   ls -lh baikal_backup_*.tar.gz
+
+2. TÉLÉCHARGER LA NOUVELLE VERSION
+   --------------------------------
+   cd /tmp
+   wget https://github.com/sabre-io/Baikal/releases/download/0.9.5/baikal-0.9.5.zip
+   
+   # Vérifier le téléchargement
+   ls -lh baikal-*.zip
+
+3. ARRÊTER LES SERVICES
+   ---------------------
+   sudo systemctl stop nginx php*-fpm
+
+4. SAUVEGARDER LES DONNÉES UTILISATEUR
+   ------------------------------------
+   cd /var/www/baikal
+   sudo cp -r Specific /tmp/Specific_backup
+   sudo cp -r config /tmp/config_backup
+
+5. SUPPRIMER L'ANCIENNE INSTALLATION
+   ----------------------------------
+   cd /var/www/baikal
+   sudo find . -mindepth 1 -maxdepth 1 ! -name 'Specific' ! -name 'config' -exec rm -rf {} +
+
+6. EXTRAIRE LA NOUVELLE VERSION
+   -----------------------------
+   cd /tmp
+   unzip baikal-0.9.5.zip
+   sudo cp -r baikal/* /var/www/baikal/
+
+7. RESTAURER LES DONNÉES UTILISATEUR
+   ----------------------------------
+   sudo rm -rf /var/www/baikal/Specific
+   sudo rm -rf /var/www/baikal/config
+   sudo cp -r /tmp/Specific_backup /var/www/baikal/Specific
+   sudo cp -r /tmp/config_backup /var/www/baikal/config
+
+8. CORRIGER LES PERMISSIONS
+   -------------------------
+   sudo chown -R www-data:www-data /var/www/baikal
+   sudo chmod -R 755 /var/www/baikal
+   sudo chmod -R 770 /var/www/baikal/Specific
+   sudo chmod -R 770 /var/www/baikal/config
+
+9. REDÉMARRER LES SERVICES
+   ------------------------
+   sudo systemctl start php*-fpm
+   sudo systemctl start nginx
+   
+   # Vérifier les services
+   sudo systemctl status nginx php*-fpm
+
+10. VÉRIFIER L'INSTALLATION
+    -----------------------
+    # Test HTTP
+    curl http://localhost/
+    
+    # Vérifier les logs
+    sudo tail -f /var/log/nginx/baikal_error.log
+
+11. NETTOYER LES FICHIERS TEMPORAIRES
+    ----------------------------------
+    cd /tmp
+    rm -rf baikal baikal-*.zip
+    rm -rf Specific_backup config_backup
+
+================================================================================
+ROLLBACK EN CAS DE PROBLÈME
+================================================================================
+
+Si la mise à jour échoue ou cause des problèmes, restaurez le backup:
+
+AVEC LE SCRIPT AUTOMATIQUE:
+--------------------------
+Le script propose automatiquement un rollback en cas d'échec.
+Le backup est situé dans /var/backups/baikal/upgrade/
+
+RESTAURATION MANUELLE:
+---------------------
+# 1. Arrêter les services
+sudo systemctl stop nginx php*-fpm
+
+# 2. Supprimer l'installation problématique
+sudo rm -rf /var/www/baikal
+
+# 3. Restaurer le backup
+cd /var/backups/baikal
+sudo tar -xzf baikal_backup_YYYYMMDD.tar.gz -C /
+
+# 4. Vérifier les permissions
+sudo chown -R www-data:www-data /var/www/baikal
+
+# 5. Redémarrer les services
+sudo systemctl start php*-fpm nginx
+
+# 6. Vérifier
+curl http://localhost/
+sudo systemctl status nginx php*-fpm
+
+================================================================================
+TESTS APRÈS MISE À JOUR
+================================================================================
+
+VÉRIFICATIONS À EFFECTUER:
+-------------------------
+
+1. INTERFACE WEB
+   ✓ Accès à http://votre-serveur/
+   ✓ Connexion à l'admin
+   ✓ Liste des utilisateurs visible
+   ✓ Liste des calendriers/contacts visible
+
+2. LOGS
+   ✓ Aucune erreur dans /var/log/nginx/baikal_error.log
+   ✓ Aucune erreur dans journalctl -u nginx -u php*-fpm
+
+3. SERVICES
+   ✓ Nginx actif: systemctl is-active nginx
+   ✓ PHP-FPM actif: systemctl is-active php*-fpm
+
+4. PERMISSIONS
+   ✓ Specific/ accessible en écriture par www-data
+   ✓ config/ accessible en écriture par www-data
+
+5. SYNCHRONISATION
+   ✓ Test avec un client (iOS, Android, Desktop)
+   ✓ Création d'un nouvel événement/contact
+   ✓ Modification d'un événement/contact existant
+   ✓ Synchronisation entre plusieurs appareils
+
+6. BASE DE DONNÉES
+   ✓ SQLite: sqlite3 /var/www/baikal/Specific/db/db.sqlite "PRAGMA integrity_check;"
+   ✓ MySQL: mysql -u baikal -p -e "SHOW TABLES;" baikal
+
+CHECKLIST COMPLÈTE:
+------------------
+□ Interface web accessible
+□ Connexion admin fonctionne
+□ Utilisateurs visibles
+□ Calendriers accessibles
+□ Contacts accessibles
+□ Logs sans erreurs critiques
+□ Services actifs
+□ Permissions correctes
+□ Synchronisation fonctionne
+□ Base de données intègre
+
+================================================================================
+FRÉQUENCE DES MISES À JOUR
+================================================================================
+
+RECOMMANDATIONS:
+---------------
+• Vérifier les mises à jour: Mensuellement
+• Installer les mises à jour de sécurité: Immédiatement
+• Installer les mises à jour stables: Dans les 2 semaines
+• Tester les pré-releases: Uniquement en environnement de test
+
+VERSIONS À PRIVILÉGIER:
+----------------------
+✓ Versions stables (ex: 0.9.5, 0.9.4)
+⚠ Éviter les pré-releases en production
+⚠ Attendre quelques jours après une nouvelle release pour les retours de la communauté
+
+================================================================================
+RÉSOLUTION DES PROBLÈMES COURANTS
+================================================================================
+
+PROBLÈME: Services ne démarrent pas après mise à jour
+SOLUTION:
+1. Vérifier les logs: journalctl -u nginx -u php*-fpm
+2. Tester la config Nginx: sudo nginx -t
+3. Vérifier les permissions: ls -la /var/www/baikal/
+4. Si échec, restaurer le backup
+
+PROBLÈME: Erreurs de base de données
+SOLUTION:
+1. Vérifier l'intégrité (SQLite): sqlite3 db.sqlite "PRAGMA integrity_check;"
+2. Vérifier les permissions du fichier DB
+3. Vérifier la config dans /var/www/baikal/Specific/config.php
+4. Restaurer DB depuis backup si nécessaire
+
+PROBLÈME: Interface web inaccessible
+SOLUTION:
+1. Vérifier Nginx: systemctl status nginx
+2. Vérifier PHP-FPM: systemctl status php*-fpm
+3. Tester en local: curl http://localhost/
+4. Vérifier les permissions: ls -la /var/www/baikal/html/
+
+PROBLÈME: Synchronisation ne fonctionne plus
+SOLUTION:
+1. Vérifier les URLs CalDAV/CardDAV sur les clients
+2. Vérifier les credentials
+3. Tester avec curl: curl -u user:pass https://domain.com/dav.php/
+4. Vérifier les logs des clients
+5. Reconfigurer le compte sur le client si nécessaire
+
+================================================================================
+NOTES IMPORTANTES
+================================================================================
+
+⚠ DONNÉES PRÉSERVÉES lors de la mise à jour:
+  • Tous les calendriers et événements (Specific/db/)
+  • Tous les contacts (Specific/db/)
+  • Configuration utilisateurs (Specific/)
+  • Configuration système (config/)
+
+⚠ DONNÉES REMPLACÉES lors de la mise à jour:
+  • Code source Baïkal (html/, Core/, vendor/)
+  • Interface web d'administration
+  • Bibliothèques PHP
+
+⚠ RECOMMANDATIONS:
+  • Toujours créer un backup avant mise à jour
+  • Tester sur un environnement de développement d'abord
+  • Effectuer les mises à jour pendant les heures creuses
+  • Informer les utilisateurs avant la mise à jour
+  • Garder les backups pendant au moins 30 jours
+
+================================================================================
+SCRIPTS DISPONIBLES
+================================================================================
+
+update_baikal.sh       - Mise à jour interactive complète
+check_updates.sh       - Vérification rapide des mises à jour disponibles
+backup_baikal.sh       - Backup manuel avant mise à jour
+monitor_baikal.sh      - Vérification post-mise à jour
+
+================================================================================
+RESSOURCES
+================================================================================
+
+Documentation officielle: https://sabre.io/baikal/upgrade/
+Releases GitHub: https://github.com/sabre-io/Baikal/releases
+Changelog: https://github.com/sabre-io/Baikal/blob/master/CHANGELOG.md
+Issues: https://github.com/sabre-io/Baikal/issues
+
+================================================================================
+
+Bonne mise à jour ! 🚀
