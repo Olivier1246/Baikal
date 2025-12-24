@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ################################################################################
-# Script de monitoring Baïkal - Version corrigée
+# Script de monitoring Baïkal - Version finale corrigée
 ################################################################################
 
 GREEN='\033[0;32m'
@@ -88,7 +88,7 @@ fi
 echo ""
 
 # ============================================
-# 3. Base de données
+# 3. Base de données - CORRIGÉ
 # ============================================
 echo -e "${YELLOW}Base de données:${NC}"
 
@@ -96,12 +96,16 @@ if [ -f "$INSTALL_DIR/Specific/db/db.sqlite" ]; then
     DB_SIZE=$(du -sh "$INSTALL_DIR/Specific/db/db.sqlite" | cut -f1)
     echo -e "${GREEN}✓ SQLite: Base trouvée ($DB_SIZE)${NC}"
     
-    # Intégrité de la base
-    INTEGRITY=$(sqlite3 "$INSTALL_DIR/Specific/db/db.sqlite" "PRAGMA integrity_check;" 2>/dev/null)
+    # Intégrité de la base - CORRECTION DU BUG
+    INTEGRITY_RAW=$(sqlite3 "$INSTALL_DIR/Specific/db/db.sqlite" "PRAGMA integrity_check;" 2>/dev/null)
+    # Nettoyer les retours à la ligne et espaces
+    INTEGRITY=$(echo "$INTEGRITY_RAW" | tr -d '\n' | tr -d '\r' | xargs)
+    
     if [ "$INTEGRITY" = "ok" ]; then
         echo -e "${GREEN}  Intégrité: OK${NC}"
     else
         echo -e "${RED}  Intégrité: Problème détecté${NC}"
+        echo -e "${YELLOW}  Lancez: sudo ./diagnose_sqlite_db.sh${NC}"
     fi
 else
     echo -e "${YELLOW}⚠ SQLite: Base non trouvée${NC}"
@@ -117,15 +121,24 @@ echo -e "${YELLOW}Logs (dernières 24h):${NC}"
 # Logs Nginx
 if [ -f "$LOG_DIR/baikal_error.log" ]; then
     ERROR_COUNT=$(grep -c "error" "$LOG_DIR/baikal_error.log" 2>/dev/null || echo "0")
-    if [ "$ERROR_COUNT" -gt 0 ]; then
-        echo -e "${YELLOW}⚠ Nginx erreurs: $ERROR_COUNT dans les dernières 24h${NC}"
-        echo "  Dernière erreur:"
-        tail -1 "$LOG_DIR/baikal_error.log" | sed 's/^/  /'
+    # Nettoyer les caractères spéciaux
+    ERROR_COUNT=$(echo "$ERROR_COUNT" | tr -d '\n\r' | xargs)
+    
+    # Vérifier que c'est un nombre
+    if [[ "$ERROR_COUNT" =~ ^[0-9]+$ ]]; then
+        if [ "$ERROR_COUNT" -gt 0 ]; then
+            echo -e "${YELLOW}⚠ Nginx erreurs: $ERROR_COUNT dans les dernières 24h${NC}"
+            echo "  Dernière erreur:"
+            tail -1 "$LOG_DIR/baikal_error.log" | sed 's/^/  /'
+        else
+            echo -e "${GREEN}✓ Nginx erreurs: Aucune${NC}"
+        fi
     else
         echo -e "${GREEN}✓ Nginx erreurs: Aucune${NC}"
     fi
 elif [ -f "$LOG_DIR/error.log" ]; then
     ERROR_COUNT=$(grep -c "baikal" "$LOG_DIR/error.log" 2>/dev/null || echo "0")
+    ERROR_COUNT=$(echo "$ERROR_COUNT" | tr -d '\n\r' | xargs)
     echo -e "${YELLOW}⚠ Logs dans $LOG_DIR/error.log ($ERROR_COUNT entrées)${NC}"
 else
     echo -e "${YELLOW}⚠ Logs Nginx: Fichier introuvable${NC}"
@@ -134,8 +147,10 @@ fi
 
 # Logs PHP-FPM
 if [ ! -z "$PHP_FPM_SERVICE" ]; then
-    PHP_ERRORS=$(journalctl -u "$PHP_FPM_SERVICE" --since "24 hours ago" | grep -ci "error" || echo "0")
-    if [ "$PHP_ERRORS" -gt 0 ]; then
+    PHP_ERRORS=$(journalctl -u "$PHP_FPM_SERVICE" --since "24 hours ago" 2>/dev/null | grep -ci "error" || echo "0")
+    PHP_ERRORS=$(echo "$PHP_ERRORS" | tr -d '\n\r' | xargs)
+    
+    if [[ "$PHP_ERRORS" =~ ^[0-9]+$ ]] && [ "$PHP_ERRORS" -gt 0 ]; then
         echo -e "${YELLOW}⚠ PHP-FPM erreurs: $PHP_ERRORS dans les dernières 24h${NC}"
     else
         echo -e "${GREEN}✓ PHP-FPM: Aucune erreur${NC}"
@@ -248,8 +263,6 @@ if command -v ss &> /dev/null; then
     else
         echo -e "${YELLOW}⚠ Port HTTPS 443: Fermé ou non détecté${NC}"
     fi
-else
-    echo -e "${YELLOW}⚠ Commande 'ss' non disponible (installez: apt install iproute2)${NC}"
 fi
 
 # Test externe (si domaine configuré)
@@ -315,11 +328,15 @@ if [ -z "$PHP_FPM_SERVICE" ]; then
     ((PROBLEMS++))
 fi
 
-if [ -z "$LATEST_BACKUP" ] || [ $BACKUP_AGE_DAYS -gt 7 ]; then
+if [ ! -z "$LATEST_BACKUP" ] && [ $BACKUP_AGE_DAYS -gt 7 ]; then
     ((PROBLEMS++))
 fi
 
-if [ $DAYS_LEFT -lt 7 ]; then
+if [ ! -z "$DAYS_LEFT" ] && [ $DAYS_LEFT -lt 7 ]; then
+    ((PROBLEMS++))
+fi
+
+if [ "$INTEGRITY" != "ok" ]; then
     ((PROBLEMS++))
 fi
 
@@ -340,5 +357,6 @@ echo "- Redémarrer Nginx: sudo systemctl restart nginx"
 echo "- Redémarrer PHP-FPM: sudo systemctl restart php*-fpm"
 echo "- Backup manuel: sudo /usr/local/bin/backup_baikal.sh"
 echo "- Renouveler SSL: sudo certbot renew"
-echo "- Corriger PHP-FPM: sudo ./fix_php_fpm_service.sh"
+echo "- Diagnostic DB: sudo ./diagnose_sqlite_db.sh"
+echo "- Réparer DB: sudo ./repair_sqlite_db.sh"
 echo ""
