@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ################################################################################
-# Script de mise à jour de Baïkal - VERSION CORRIGÉE
+# Script de mise à jour de Baïkal - VERSION FINALE CORRIGÉE
 # Vérifie GitHub et propose toutes les versions disponibles
 ################################################################################
 
@@ -23,8 +23,9 @@ BACKUP_DIR="/var/backups/baikal/upgrade"
 TEMP_DIR="/tmp/baikal_upgrade_$$"
 WEB_USER="www-data"
 
-# Variables globales pour stocker les releases
+# Fichiers temporaires
 RELEASES_FILE="/tmp/baikal_releases_$$.txt"
+TOTAL_FILE="/tmp/baikal_total_$$.txt"
 
 # Vérification root
 if [ "$EUID" -ne 0 ]; then 
@@ -51,7 +52,7 @@ log_step() {
 
 # Nettoyage à la sortie
 cleanup_temp() {
-    rm -f "$RELEASES_FILE"
+    rm -f "$RELEASES_FILE" "$TOTAL_FILE"
     rm -rf "$TEMP_DIR"
 }
 trap cleanup_temp EXIT
@@ -124,6 +125,9 @@ fetch_releases() {
         exit 1
     fi
     
+    # Compter le nombre de releases
+    wc -l < "$RELEASES_FILE" > "$TOTAL_FILE"
+    
     log_info "Releases récupérées avec succès"
 }
 
@@ -165,17 +169,13 @@ show_releases() {
         ((index++))
     done < "$RELEASES_FILE"
     
-    local total=$((index - 1))
-    
     echo -e "${CYAN}═══════════════════════════════════════════════════════${NC}"
     echo ""
-    
-    echo "$total"  # Retourner le nombre total
 }
 
 # Sélectionner une version
 select_version() {
-    local total_releases=$1
+    local total_releases=$(cat "$TOTAL_FILE")
     
     while true; do
         read -p "Choisissez une version à installer (1-$total_releases) ou 'q' pour quitter: " choice
@@ -185,43 +185,57 @@ select_version() {
             exit 0
         fi
         
-        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "$total_releases" ]; then
-            # Lire la ligne correspondante du fichier
-            local line=$(sed -n "${choice}p" "$RELEASES_FILE")
-            
-            IFS='|' read -r tag name date prerelease <<< "$line"
-            
-            if [ -z "$tag" ]; then
-                log_error "Erreur lors de la lecture des informations de version"
-                exit 1
-            fi
-            
-            # Exporter les variables pour les autres fonctions
-            export SELECTED_VERSION="$tag"
-            export SELECTED_NAME="$name"
-            export SELECTED_DATE=$(date -d "$date" "+%d/%m/%Y" 2>/dev/null || echo "${date:0:10}")
-            export SELECTED_PRERELEASE="$prerelease"
-            
-            echo ""
-            echo -e "${GREEN}Version sélectionnée:${NC}"
-            echo "  Version: $SELECTED_VERSION"
-            echo "  Nom: $SELECTED_NAME"
-            echo "  Date: $SELECTED_DATE"
-            
-            if [ "$SELECTED_PRERELEASE" = "true" ]; then
-                echo ""
-                log_warn "Cette version est une PRE-RELEASE (non stable)"
-                read -p "Voulez-vous vraiment continuer? (o/n): " confirm_pre
-                if [ "$confirm_pre" != "o" ]; then
-                    log_info "Annulation"
-                    exit 0
-                fi
-            fi
-            
-            break
-        else
-            log_error "Choix invalide"
+        # Vérifier que c'est un nombre
+        if ! [[ "$choice" =~ ^[0-9]+$ ]]; then
+            log_error "Veuillez entrer un nombre valide"
+            continue
         fi
+        
+        # Vérifier que c'est dans la plage
+        if [ "$choice" -lt 1 ] || [ "$choice" -gt "$total_releases" ]; then
+            log_error "Veuillez choisir un nombre entre 1 et $total_releases"
+            continue
+        fi
+        
+        # Lire la ligne correspondante du fichier
+        local line=$(sed -n "${choice}p" "$RELEASES_FILE")
+        
+        if [ -z "$line" ]; then
+            log_error "Erreur lors de la lecture de la version sélectionnée"
+            continue
+        fi
+        
+        IFS='|' read -r tag name date prerelease <<< "$line"
+        
+        if [ -z "$tag" ]; then
+            log_error "Erreur lors de l'extraction des informations de version"
+            continue
+        fi
+        
+        # Exporter les variables pour les autres fonctions
+        export SELECTED_VERSION="$tag"
+        export SELECTED_NAME="$name"
+        export SELECTED_DATE=$(date -d "$date" "+%d/%m/%Y" 2>/dev/null || echo "${date:0:10}")
+        export SELECTED_PRERELEASE="$prerelease"
+        
+        echo ""
+        echo -e "${GREEN}Version sélectionnée:${NC}"
+        echo "  Version: $SELECTED_VERSION"
+        echo "  Nom: $SELECTED_NAME"
+        echo "  Date: $SELECTED_DATE"
+        
+        if [ "$SELECTED_PRERELEASE" = "true" ]; then
+            echo ""
+            log_warn "Cette version est une PRE-RELEASE (non stable)"
+            read -p "Voulez-vous vraiment continuer? (o/n): " confirm_pre
+            if [ "$confirm_pre" != "o" ]; then
+                log_info "Retour à la sélection..."
+                echo ""
+                continue
+            fi
+        fi
+        
+        break
     done
 }
 
@@ -266,21 +280,24 @@ download_version() {
     local download_url="https://github.com/${GITHUB_REPO}/releases/download/${SELECTED_VERSION}/baikal-${version_number}.zip"
     
     log_info "URL: $download_url"
+    echo ""
     
-    # Télécharger
-    if ! wget -q --show-progress "$download_url" -O baikal.zip 2>&1; then
+    # Télécharger avec barre de progression
+    if wget --show-progress "$download_url" -O baikal.zip 2>&1; then
+        log_info "Téléchargement terminé"
+    else
         log_warn "Échec avec l'URL standard, tentative avec l'archive source..."
         
         # Essayer l'URL alternative
         download_url="https://github.com/${GITHUB_REPO}/archive/refs/tags/${SELECTED_VERSION}.zip"
         
-        if ! wget -q --show-progress "$download_url" -O baikal.zip 2>&1; then
+        if wget --show-progress "$download_url" -O baikal.zip 2>&1; then
+            log_info "Téléchargement terminé"
+        else
             log_error "Impossible de télécharger la version"
             exit 1
         fi
     fi
-    
-    log_info "Téléchargement terminé"
 }
 
 # Installer la nouvelle version
@@ -298,10 +315,11 @@ install_version() {
     unzip -q baikal.zip
     
     # Trouver le répertoire extrait
-    local extracted_dir=$(find . -maxdepth 1 -type d -name "*aikal*" -o -name "*AIKAL*" | head -1)
+    local extracted_dir=$(find . -maxdepth 1 -type d ! -name "." ! -name ".." | head -1)
     
     if [ -z "$extracted_dir" ]; then
-        extracted_dir="."
+        log_error "Impossible de trouver le répertoire extrait"
+        exit 1
     fi
     
     log_info "Répertoire extrait: $extracted_dir"
@@ -317,13 +335,7 @@ install_version() {
     
     # Copier la nouvelle version
     log_info "Installation de la nouvelle version..."
-    if [ "$extracted_dir" = "." ]; then
-        # Les fichiers sont directement dans le répertoire courant
-        find . -maxdepth 1 -mindepth 1 ! -name "Specific_backup" ! -name "config_backup" ! -name "baikal.zip" -exec cp -r {} "$INSTALL_DIR/" \;
-    else
-        # Copier depuis le sous-répertoire
-        cp -r "$extracted_dir"/* "$INSTALL_DIR/" 2>/dev/null || cp -r "$extracted_dir"/.[!.]* "$INSTALL_DIR/" 2>/dev/null || true
-    fi
+    cp -r "$extracted_dir"/* "$INSTALL_DIR/"
     
     # Restaurer les données
     log_info "Restauration des données utilisateur..."
@@ -442,9 +454,6 @@ show_report() {
     echo "   - /var/log/nginx/baikal_error.log"
     echo "   - journalctl -u nginx -u php*-fpm"
     echo ""
-    echo "En cas de problème, restaurez le backup:"
-    echo "  sudo tar -xzf $BACKUP_FILE -C $(dirname "$INSTALL_DIR")"
-    echo ""
 }
 
 # Programme principal
@@ -462,11 +471,11 @@ main() {
     # Récupérer les releases
     fetch_releases
     
-    # Afficher et obtenir le nombre total
-    local total=$(show_releases)
+    # Afficher les versions
+    show_releases
     
     # Sélectionner la version
-    select_version "$total"
+    select_version
     
     # Confirmation finale
     echo ""
