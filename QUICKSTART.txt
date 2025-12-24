@@ -1,0 +1,215 @@
+################################################################################
+#                         DÉMARRAGE ULTRA-RAPIDE                               #
+################################################################################
+
+INSTALLATION EN 3 ÉTAPES
+========================
+
+1. TÉLÉCHARGER LES SCRIPTS
+   git clone [votre-repo] baikal-install
+   cd baikal-install
+
+2. LANCER L'INSTALLATION
+   chmod +x *.sh
+   sudo ./start.sh
+
+3. CONFIGURER VIA WEB
+   Ouvrez http://localhost/ dans votre navigateur
+
+
+INSTALLATION EN UNE LIGNE (sans interaction)
+=============================================
+
+Installation locale avec SQLite:
+---------------------------------
+sudo ./baikal_install.sh
+
+Installation distante avec SSL:
+--------------------------------
+sudo ./baikal_install.sh && sudo ./setup_ssl.sh
+
+
+COMMANDES RAPIDES
+=================
+
+# Installation guidée interactive
+sudo ./start.sh
+
+# Vérifier les prérequis
+sudo ./check_prereqs.sh
+
+# Installation de base
+sudo ./baikal_install.sh
+
+# Configurer SSL
+sudo ./setup_ssl.sh
+
+# Configurer backups
+sudo ./setup_backup.sh
+
+# Monitoring
+sudo ./monitor_baikal.sh
+
+
+ACCÈS APRÈS INSTALLATION
+=========================
+
+Interface Web:
+- Local: http://localhost/
+- Distant: https://votre-domaine.com/
+
+Configuration initiale:
+1. Créer le compte administrateur
+2. Configurer la base de données (pré-rempli)
+3. Créer des utilisateurs CalDAV/CardDAV
+
+
+CONFIGURATION CLIENT RAPIDE
+============================
+
+iOS/iPad:
+---------
+Réglages > Calendrier/Contacts > Comptes > Autre > CalDAV/CardDAV
+Serveur: votre-domaine.com
+Utilisateur: [votre_utilisateur]
+Mot de passe: [votre_mot_de_passe]
+
+Android (DAVx⁵):
+---------------
+1. Installer DAVx⁵ depuis F-Droid/Play Store
+2. + > URL et nom d'utilisateur
+3. URL: https://votre-domaine.com/dav.php
+4. Credentials et synchroniser
+
+
+DÉPANNAGE RAPIDE
+================
+
+Service ne démarre pas:
+sudo systemctl restart nginx php*-fpm
+
+Voir les erreurs:
+sudo tail -f /var/log/nginx/baikal_error.log
+
+Tester la connexion:
+curl http://localhost/
+
+Permissions incorrectes:
+sudo chown -R www-data:www-data /var/www/baikal
+sudo chmod -R 770 /var/www/baikal/Specific
+
+
+AIDE
+====
+
+Documentation complète:   less README.txt
+Guide clients:           less GUIDE_CLIENTS.txt
+Config MySQL:            less MYSQL_CONFIG.txt
+
+Fichiers d'info:
+/root/baikal_install_info.txt
+/root/baikal_ssl_info.txt
+/root/baikal_backup_config.txt
+
+
+BACKUP RAPIDE
+=============
+
+Manuel:
+sudo /usr/local/bin/backup_baikal.sh
+
+Voir les backups:
+ls -lh /var/backups/baikal/
+
+Restaurer:
+sudo tar -xzf /var/backups/baikal/baikal_data_*.tar.gz -C /var/www/baikal/
+
+
+SÉCURITÉ RAPIDE
+===============
+
+Configurer firewall:
+sudo ufw allow ssh
+sudo ufw allow http
+sudo ufw allow https
+sudo ufw enable
+
+Forcer HTTPS:
+Décommentez "return 301 https://..." dans /etc/nginx/sites-available/baikal
+
+Changer mot de passe:
+Interface web > Utilisateurs et droits
+
+
+URLS IMPORTANTES
+================
+
+CalDAV: https://votre-domaine.com/dav.php/calendars/[user]/
+CardDAV: https://votre-domaine.com/dav.php/addressbooks/[user]/
+Admin: https://votre-domaine.com/admin/
+
+Well-known:
+https://votre-domaine.com/.well-known/caldav
+https://votre-domaine.com/.well-known/carddav
+
+
+STRUCTURE DES FICHIERS
+======================
+
+Scripts d'installation:
+├── start.sh                 ⭐ Script interactif (recommandé)
+├── check_prereqs.sh         Vérifier les prérequis
+├── baikal_install.sh        Installation principale
+├── setup_ssl.sh             Configuration SSL
+├── setup_backup.sh          Configuration backups
+├── backup_baikal.sh         Script de backup
+└── monitor_baikal.sh        Monitoring système
+
+Documentation:
+├── README.txt               📖 Guide complet
+├── GUIDE_CLIENTS.txt        Guide configuration clients
+├── MYSQL_CONFIG.txt         Configuration MySQL avancée
+└── QUICKSTART.txt          ⚡ Ce fichier
+
+Installation:
+├── /var/www/baikal/         Installation Baïkal
+├── /etc/nginx/sites-*/      Configuration Nginx
+├── /var/backups/baikal/     Backups
+└── /var/log/nginx/          Logs
+
+
+SUPPORT
+=======
+
+Documentation: https://sabre.io/baikal/
+GitHub: https://github.com/sabre-io/Baikal
+Forum: https://github.com/sabre-io/Baikal/discussions
+
+
+TIPS
+====
+
+💡 Utilisez SQLite pour un usage personnel/familial
+💡 MySQL pour >10 utilisateurs ou usage intensif
+💡 HTTPS est obligatoire pour l'accès distant
+💡 Testez les backups régulièrement
+💡 Changez les mots de passe par défaut
+💡 Activez le firewall (ufw)
+💡 Mettez à jour régulièrement le système
+
+🎯 Performance: 
+   - SQLite suffit pour 5-10 utilisateurs
+   - MySQL recommandé pour 20+ utilisateurs
+   - 512Mo RAM minimum, 1Go recommandé
+
+🔒 Sécurité:
+   - Toujours utiliser HTTPS en production
+   - Mots de passe forts (12+ caractères)
+   - Fail2ban pour protection brute-force
+   - Backups chiffrés hors site
+
+
+BON CALENDRIER ! 📅✨
+
+Version: 1.0
+Créé avec ❤️  par Claude

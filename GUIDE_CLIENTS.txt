@@ -1,0 +1,275 @@
+################################################################################
+# Guide de configuration des clients CalDAV/CardDAV pour Baïkal
+################################################################################
+
+Ce guide explique comment configurer différents clients pour se connecter
+à votre serveur Baïkal.
+
+================================================================================
+INFORMATIONS DE CONNEXION
+================================================================================
+
+URL du serveur: https://votre-domaine.com/dav.php
+(ou http://localhost/dav.php pour accès local uniquement)
+
+Nom d'utilisateur: [créé dans l'interface web de Baïkal]
+Mot de passe: [défini dans l'interface web de Baïkal]
+
+URLs complètes:
+- Calendriers: https://votre-domaine.com/dav.php/calendars/[utilisateur]/
+- Contacts: https://votre-domaine.com/dav.php/addressbooks/[utilisateur]/
+
+================================================================================
+iOS / iPadOS (iPhone/iPad)
+================================================================================
+
+CALENDRIERS (CalDAV):
+---------------------
+1. Ouvrez "Réglages" > "Calendrier" > "Comptes"
+2. Appuyez sur "Ajouter un compte"
+3. Sélectionnez "Autre"
+4. Appuyez sur "Ajouter un compte CalDAV"
+5. Entrez les informations:
+   - Serveur: votre-domaine.com
+   - Nom d'utilisateur: votre_utilisateur
+   - Mot de passe: votre_mot_de_passe
+   - Description: Mon calendrier Baïkal
+6. Appuyez sur "Suivant"
+7. Activez "Calendriers" et "Rappels" si souhaité
+8. Appuyez sur "Enregistrer"
+
+CONTACTS (CardDAV):
+------------------
+1. Ouvrez "Réglages" > "Contacts" > "Comptes"
+2. Appuyez sur "Ajouter un compte"
+3. Sélectionnez "Autre"
+4. Appuyez sur "Ajouter un compte CardDAV"
+5. Entrez les informations:
+   - Serveur: votre-domaine.com
+   - Nom d'utilisateur: votre_utilisateur
+   - Mot de passe: votre_mot_de_passe
+   - Description: Mes contacts Baïkal
+6. Appuyez sur "Suivant"
+7. Appuyez sur "Enregistrer"
+
+Note: iOS découvrira automatiquement les bons chemins DAV
+
+================================================================================
+ANDROID avec DAVx⁵
+================================================================================
+
+INSTALLATION:
+------------
+1. Installez DAVx⁵ depuis F-Droid ou Google Play Store
+2. Ouvrez DAVx⁵
+
+CONFIGURATION:
+-------------
+1. Appuyez sur le "+" en bas à droite
+2. Sélectionnez "Connexion avec URL et nom d'utilisateur"
+3. Entrez les informations:
+   - URL de base: https://votre-domaine.com/dav.php
+   - Nom d'utilisateur: votre_utilisateur
+   - Mot de passe: votre_mot_de_passe
+4. Appuyez sur "CONNEXION"
+5. DAVx⁵ découvrira automatiquement vos calendriers et carnets d'adresses
+6. Sélectionnez ceux que vous voulez synchroniser
+7. Choisissez les applications locales:
+   - Calendrier: Application Calendrier par défaut
+   - Contacts: Application Contacts par défaut
+8. Appuyez sur "CRÉER"
+
+SYNCHRONISATION:
+---------------
+- La synchronisation se fait automatiquement
+- Pour forcer une synchronisation: ouvrez DAVx⁵ > compte > icône synchronisation
+
+================================================================================
+MACOS (Calendrier et Contacts natifs)
+================================================================================
+
+CALENDRIERS:
+-----------
+1. Ouvrez "Préférences Système" > "Comptes Internet"
+2. Cliquez sur "Ajouter un autre compte..." en bas
+3. Sélectionnez "Compte CalDAV"
+4. Entrez les informations:
+   - Type de compte: Avancé
+   - Nom d'utilisateur: votre_utilisateur
+   - Mot de passe: votre_mot_de_passe
+   - Adresse du serveur: votre-domaine.com
+   - Chemin du serveur: /dav.php/calendars/votre_utilisateur/
+   - Port: 443
+   - Cochez "Utiliser SSL"
+5. Cliquez sur "Se connecter"
+
+CONTACTS:
+--------
+1. Ouvrez "Préférences Système" > "Comptes Internet"
+2. Cliquez sur "Ajouter un autre compte..."
+3. Sélectionnez "Compte CardDAV"
+4. Entrez les informations:
+   - Nom d'utilisateur: votre_utilisateur
+   - Mot de passe: votre_mot_de_passe
+   - Adresse du serveur: votre-domaine.com
+   - Chemin du serveur: /dav.php/addressbooks/votre_utilisateur/
+5. Cliquez sur "Se connecter"
+
+================================================================================
+THUNDERBIRD avec Lightning et CardBook
+================================================================================
+
+CALENDRIERS (Lightning):
+-----------------------
+1. Installez l'extension Lightning (si pas déjà installée)
+2. Dans Thunderbird, allez dans "Calendrier"
+3. Clic droit dans la liste des calendriers > "Nouveau calendrier"
+4. Sélectionnez "Sur le réseau"
+5. Choisissez "CalDAV"
+6. Entrez l'URL complète:
+   https://votre-domaine.com/dav.php/calendars/votre_utilisateur/nom_calendrier/
+7. Cochez "Connexion hors ligne"
+8. Cliquez sur "Suivant"
+9. Entrez un nom pour le calendrier
+10. Thunderbird demandera vos identifiants
+
+CONTACTS (CardBook):
+-------------------
+1. Installez l'extension CardBook
+2. Ouvrez CardBook (icône dans la barre d'outils)
+3. Clic droit dans le panneau gauche > "Nouveau carnet d'adresses"
+4. Sélectionnez "Distant" > "CardDAV"
+5. Entrez l'URL:
+   https://votre-domaine.com/dav.php/addressbooks/votre_utilisateur/nom_carnet/
+6. Entrez vos identifiants
+7. Cliquez sur "Valider"
+
+================================================================================
+WINDOWS (via Outlook ou applications tierces)
+================================================================================
+
+Outlook ne supporte pas nativement CalDAV/CardDAV. Utilisez:
+
+OPTION 1 - CALDAV SYNCHRONIZER (gratuit):
+-----------------------------------------
+1. Téléchargez CalDav Synchronizer:
+   https://caldavsynchronizer.org/
+2. Installez le plugin pour Outlook
+3. Dans Outlook: CalDav Synchronizer > Options de synchronisation
+4. Créez un nouveau profil CalDAV
+5. Entrez l'URL: https://votre-domaine.com/dav.php
+6. Entrez vos identifiants
+7. Configurez la synchronisation bidirectionnelle
+
+OPTION 2 - eM CLIENT (gratuit avec limites):
+--------------------------------------------
+1. Téléchargez eM Client: https://www.emclient.com/
+2. Ajoutez un nouveau compte
+3. Choisissez "Calendrier" ou "Contacts"
+4. Sélectionnez CalDAV/CardDAV
+5. Entrez vos informations de connexion
+
+================================================================================
+LINUX (Evolution, GNOME Calendar, etc.)
+================================================================================
+
+GNOME CALENDAR:
+--------------
+1. Ouvrez GNOME Calendar
+2. Cliquez sur "+" pour ajouter un calendrier
+3. Sélectionnez "Calendrier sur le Web"
+4. Entrez l'URL complète du calendrier
+5. Entrez vos identifiants
+
+EVOLUTION:
+---------
+1. Édition > Comptes
+2. Ajouter > Calendrier
+3. Type: CalDAV
+4. URL: https://votre-domaine.com/dav.php/calendars/votre_utilisateur/
+5. Entrez vos identifiants
+
+================================================================================
+TESTS ET DÉPANNAGE
+================================================================================
+
+TEST DE CONNEXION:
+-----------------
+Testez votre serveur avec curl:
+
+# Test CalDAV
+curl -u utilisateur:password https://votre-domaine.com/dav.php/calendars/utilisateur/
+
+# Test CardDAV
+curl -u utilisateur:password https://votre-domaine.com/dav.php/addressbooks/utilisateur/
+
+PROBLÈMES COURANTS:
+------------------
+
+1. "Impossible de se connecter au serveur"
+   - Vérifiez que le serveur est accessible
+   - Vérifiez le certificat SSL (pour HTTPS)
+   - Vérifiez les credentials
+
+2. "Erreur d'authentification"
+   - Vérifiez le nom d'utilisateur et mot de passe
+   - Vérifiez que l'utilisateur est activé dans Baïkal
+
+3. "Calendriers/contacts ne se synchronisent pas"
+   - Vérifiez les permissions dans Baïkal
+   - Forcez une synchronisation manuelle
+   - Vérifiez les logs: /var/log/nginx/baikal_error.log
+
+4. "Certificat SSL non fiable"
+   - Assurez-vous que Let's Encrypt est bien configuré
+   - Importez le certificat SSL sur l'appareil si nécessaire
+
+LOGS UTILES:
+-----------
+- Nginx: /var/log/nginx/baikal_access.log et baikal_error.log
+- PHP-FPM: /var/log/php*-fpm.log
+- Baïkal: /var/www/baikal/Specific/logs/
+
+URLS DE TEST:
+------------
+- Interface web: https://votre-domaine.com/
+- Discovery CalDAV: https://votre-domaine.com/.well-known/caldav
+- Discovery CardDAV: https://votre-domaine.com/.well-known/carddav
+
+================================================================================
+CONFIGURATION AVANCÉE
+================================================================================
+
+SYNCHRONISATION BIDIRECTIONNELLE:
+---------------------------------
+Tous les clients mentionnés supportent la synchronisation bidirectionnelle.
+Les modifications faites sur un appareil seront synchronisées sur tous les autres.
+
+PARTAGE DE CALENDRIERS:
+----------------------
+1. Connectez-vous à l'interface web de Baïkal
+2. Sélectionnez un calendrier
+3. Configurez les permissions de partage
+4. Les autres utilisateurs pourront y accéder avec leur compte
+
+FRÉQUENCE DE SYNCHRONISATION:
+----------------------------
+- iOS: Automatique (push) ou manuel
+- Android (DAVx⁵): Configurable dans les paramètres du compte
+- Desktop: Généralement toutes les 15-30 minutes
+
+PLUSIEURS CALENDRIERS/CARNETS:
+-----------------------------
+Vous pouvez créer plusieurs calendriers et carnets d'adresses dans Baïkal
+et les synchroniser individuellement sur vos appareils.
+
+================================================================================
+SUPPORT
+================================================================================
+
+Documentation officielle: https://sabre.io/baikal/
+Forum communautaire: https://github.com/sabre-io/Baikal/discussions
+Rapporter un bug: https://github.com/sabre-io/Baikal/issues
+
+Pour des questions spécifiques à votre installation, consultez les logs
+et le fichier /root/baikal_install_info.txt sur votre serveur.
