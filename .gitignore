@@ -1,0 +1,64 @@
+# Fichiers de configuration locaux
+*.local
+*.backup
+*.bak
+*.old
+
+# Fichiers temporaires
+*.tmp
+*.temp
+*.swp
+*~
+
+# Logs
+*.log
+logs/
+
+# Fichiers de secrets
+*.key
+*.pem
+*_key
+*_secret
+passwords.txt
+credentials.txt
+
+# Backups
+backups/
+*.tar.gz
+*.zip
+*.sql
+*.sqlite-backup
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.so
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Fichiers de test
+test_output/
+*.test
+
+# Variables d'environnement
+.env
+.env.local
+
+# Fichiers d'information sensibles créés après installation
+/install_info.txt
+/ssl_info.txt
+/backup_config.txt
