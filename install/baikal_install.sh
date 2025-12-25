@@ -16,7 +16,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # Configuration
-BAIKAL_VERSION="0.9.5"
+BAIKAL_VERSION="0.11.1"
 INSTALL_DIR="/var/www/baikal"
 WEB_USER="www-data"
 DB_TYPE="sqlite"
