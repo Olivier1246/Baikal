@@ -91,7 +91,7 @@ option_full_install() {
     
     if [ "$confirm" = "o" ]; then
         echo ""
-        "$SCRIPT_DIR/baikal_install.sh"
+        "$SCRIPT_DIR/baikal_install.sh" --db sqlite --non-interactive
         
         echo ""
         echo -e "${GREEN}========================================${NC}"
@@ -113,39 +113,56 @@ option_custom_install() {
     show_header
     echo -e "${GREEN}=== Installation personnalisée ===${NC}"
     echo ""
+
+    # Arguments pour baikal_install.sh
+    INSTALL_ARGS=()
+
+    # Type d'installation
     echo "Type d'installation:"
     echo "1. Local uniquement (localhost)"
     echo "2. Distant (avec nom de domaine)"
     read -p "Votre choix [1]: " install_type
     install_type=${install_type:-1}
+
+    if [ "$install_type" = "2" ]; then
+        read -p "Entrez votre nom de domaine: " domain_name
+        INSTALL_ARGS+=(--domain "$domain_name")
+    fi
     
+    # Base de données
     echo ""
     echo "Base de données:"
     echo "1. SQLite (recommandé pour usage personnel)"
     echo "2. MySQL (pour usage intensif)"
-    read -p "Votre choix [1]: " db_type
-    db_type=${db_type:-1}
+    read -p "Votre choix [1]: " db_choice
+    db_choice=${db_choice:-1}
+
+    if [ "$db_choice" = "1" ]; then
+        INSTALL_ARGS+=(--db "sqlite")
+        DB_TYPE_DISPLAY="SQLite"
+    else
+        INSTALL_ARGS+=(--db "mysql")
+        DB_TYPE_DISPLAY="MySQL"
+    fi
     
+    # Résumé
     echo ""
     echo "Configuration choisie:"
     if [ "$install_type" = "1" ]; then
         echo "- Installation locale"
     else
-        echo "- Installation distante"
+        echo "- Installation distante (Domaine: $domain_name)"
     fi
+    echo "- Base de données: $DB_TYPE_DISPLAY"
     
-    if [ "$db_type" = "1" ]; then
-        echo "- Base de données SQLite"
-    else
-        echo "- Base de données MySQL"
-    fi
-    
+    # Confirmation
     echo ""
     read -p "Confirmer et lancer l'installation ? (o/n) [o]: " confirm
     confirm=${confirm:-o}
     
     if [ "$confirm" = "o" ]; then
-        "$SCRIPT_DIR/baikal_install.sh"
+        # Exécuter avec les arguments
+        "$SCRIPT_DIR/baikal_install.sh" "${INSTALL_ARGS[@]}"
     fi
     
     read -p "Appuyez sur Entrée pour continuer..."
