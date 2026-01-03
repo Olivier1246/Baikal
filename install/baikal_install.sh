@@ -19,8 +19,14 @@ NC='\033[0m'
 BAIKAL_VERSION="0.11.1"
 INSTALL_DIR="/var/www/baikal"
 WEB_USER="www-data"
-DB_TYPE="sqlite"
+
+# Arguments
 DOMAIN_NAME=""
+DB_TYPE=""
+DB_NAME=""
+DB_USER=""
+DB_PASS=""
+NON_INTERACTIVE=false
 
 # Fonctions
 log_info() {
@@ -50,18 +56,61 @@ echo -e "${GREEN}Installation de Baïkal ${BAIKAL_VERSION}${NC}"
 echo -e "${GREEN}════════════════════════════════════════${NC}"
 echo ""
 
-# Configuration interactive
-read -p "Nom de domaine (ou vide pour localhost): " DOMAIN_NAME
-read -p "Type de base de données (sqlite/mysql) [sqlite]: " DB_CHOICE
-DB_TYPE=${DB_CHOICE:-sqlite}
+# Parsing des arguments en ligne de commande
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --domain) DOMAIN_NAME="$2"; shift 2;;
+        --db) DB_TYPE="$2"; shift 2;;
+        --db-name) DB_NAME="$2"; shift 2;;
+        --db-user) DB_USER="$2"; shift 2;;
+        --db-pass) DB_PASS="$2"; shift 2;;
+        --non-interactive) NON_INTERACTIVE=true; shift 1;;
+        *)
+            log_error "Option inconnue: $1"
+            exit 1
+            ;;
+    esac
+done
 
+# Configuration interactive si les arguments ne sont pas passés
+if [ "$NON_INTERACTIVE" = false ]; then
+    if [ -z "$DOMAIN_NAME" ]; then
+        read -p "Nom de domaine (ou vide pour localhost): " DOMAIN_NAME
+    fi
+
+    if [ -z "$DB_TYPE" ]; then
+        read -p "Type de base de données (sqlite/mysql) [sqlite]: " DB_CHOICE
+        DB_TYPE=${DB_CHOICE:-sqlite}
+    fi
+
+    if [ "$DB_TYPE" = "mysql" ]; then
+        if [ -z "$DB_NAME" ]; then
+            read -p "Nom de la base de données [baikal]: " DB_NAME
+        fi
+
+        if [ -z "$DB_USER" ]; then
+            read -p "Utilisateur MySQL [baikal]: " DB_USER
+        fi
+
+        if [ -z "$DB_PASS" ]; then
+            read -sp "Mot de passe MySQL: " DB_PASS
+            echo ""
+        fi
+    fi
+fi
+
+# Valeurs par défaut pour les variables non définies
+DB_TYPE=${DB_TYPE:-sqlite}
 if [ "$DB_TYPE" = "mysql" ]; then
-    read -p "Nom de la base de données [baikal]: " DB_NAME
     DB_NAME=${DB_NAME:-baikal}
-    read -p "Utilisateur MySQL [baikal]: " DB_USER
     DB_USER=${DB_USER:-baikal}
-    read -sp "Mot de passe MySQL: " DB_PASS
-    echo ""
+fi
+
+
+# Validation pour l'installation non-interactive
+if [ "$NON_INTERACTIVE" = true ] && [ "$DB_TYPE" = "mysql" ] && [ -z "$DB_PASS" ]; then
+    log_error "En mode non-interactif, le mot de passe MySQL (--db-pass) est requis pour MySQL."
+    exit 1
 fi
 
 # 1. Mise à jour système
